@@ -8,13 +8,42 @@ const rl = readline.createInterface({
 });
 
 
-function Checker() {
-  // Your code here
+// function Checker() {
+//   // Your code here
+// }
+
+class Checker {
+  constructor(symbol){
+    this.symbol = symbol;
+  }
 }
 
 class Board {
   constructor() {
-    this.grid = []
+    this.grid = [];
+    this.checkers = [];
+  }
+  placeCheckers(){
+    for (let row1 = 0; row1 < 3; row1++){
+      for(let col1 = 0; col1 < 8; col1++){
+        if((row1 % 2 === 0 && col1 % 2 === 1) || (row1 % 2 === 1 && col1 % 2 === 0) ){
+          const whiteChecker = new Checker('⚪');
+          this.grid[row1][col1] = whiteChecker;
+          const coordinates = [row1, col1];
+          this.checkers.push(coordinates);
+        }
+      }
+    }
+    for (let row2 = 5; row2 < 8; row2++){
+      for(let col1 = 0; col1 < 8; col1++){
+        if((row2 % 2 === 0 && col1 % 2 === 1) || (row2 % 2 === 1 && col1 % 2 === 0) ){
+          const blackChecker = new Checker('⚫');
+          this.grid[row2][col1] = blackChecker;
+          const coordinates = [row2, col1];
+          this.checkers.push(coordinates);
+        }
+      }
+    }
   }
   // method that creates an 8x8 array, filled with null values
   createGrid() {
@@ -52,7 +81,9 @@ class Board {
     console.log(string);
   }
 
-  // Your code here
+  selectChecker(row, column){
+    return this.grid[row][column];
+  }
 }
 
 class Game {
@@ -61,6 +92,10 @@ class Game {
   }
   start() {
     this.board.createGrid();
+    this.board.placeCheckers();
+  }
+  moveChecker(start, end){
+    
   }
 }
 
