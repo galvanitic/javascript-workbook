@@ -8,9 +8,9 @@ const rl = readline.createInterface({
 });
 
 
-// function Checker() {
-//   // Your code here
-// }
+function Checkers() {
+  // Your code here
+}
 
 class Checker {
   constructor(symbol){
@@ -84,6 +84,22 @@ class Board {
   selectChecker(row, column){
     return this.grid[row][column];
   }
+
+  clearSpot(row, column){
+    this.grid[row][column] = null;
+  }
+
+  placeChecker(row, column, checker){
+    this.grid[row][column] = checker;
+  }
+
+  killChecker(position){
+    let checker = this.selectChecker(position[0], position[1]);
+    let index = this.checkers.findIndex(position);
+    this.checkers.splice(index, 1);
+    this.grid[index] = null;
+    // console.log(this.checkers);
+  }
 }
 
 class Game {
@@ -93,9 +109,15 @@ class Game {
   start() {
     this.board.createGrid();
     this.board.placeCheckers();
+    console.log(this.board.checkers);
   }
   moveChecker(start, end){
-    
+    // These let us choose the coordinates row = array[0], column = array[1];
+    let startCoordinates = start.split('');
+    let endCoordinates = end.split('');
+    let checker = this.board.selectChecker(startCoordinates[0], startCoordinates[1]);
+    this.board.clearSpot(startCoordinates[0], startCoordinates[1]);
+    this.board.placeChecker(endCoordinates[0], endCoordinates[1], checker);
   }
 }
 
