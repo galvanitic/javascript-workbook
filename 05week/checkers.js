@@ -36,6 +36,19 @@ function searchForArray(haystack, needle){
   }
   return false;
 }
+// For the same reason that we made the searchForArray() fn, this function grabs the index of an array within
+//    another array. This one was custom made from my noggin.
+function getIndexOfPos(array, value){
+  let row = value[0];
+  let col = value[1];
+  let index = -1;
+  for(let i = 0; i < array.length; i++){
+    if (array[i][0] === row && array[i][1] === col){
+      index = i;
+    }
+  }
+  return index;
+}
 
 class Board {
   constructor() {
@@ -117,11 +130,12 @@ class Board {
     return this.grid[row][column];
   }
 
+// Returns true or false based on whether the piece is black or white.
   blackOrWhite(coordinates){
     if (searchForArray(this.checkerPositions.whiteCheckers, coordinates)){
       //If it's in the white category
       return false;
-    }else if (searchForArray(this.checkerPositions.whiteCheckers, coordinates)){
+    }else if (searchForArray(this.checkerPositions.blackCheckers, coordinates)){
       //If it's in the black category
       return true;
     }else {
@@ -131,28 +145,35 @@ class Board {
   }
 
   clearSpot(row, column){
-    // Set that grid spot to null
-    this.grid[row][column] = null;
-
     //Let's update our checkerPositions object
     // Create our coordinates 'data type'
     const coordinates = [Number(row), Number(column)];
     if (this.blackOrWhite(coordinates) === true){
       // If the piece is in the black category
       //  Get the index that the piece is in
-      let indexOfChecker = this.checkerPositions.blackCheckers.indexOf(coordinates);
-      console.log(indexOfChecker);
+      let indexOfChecker = getIndexOfPos(this.checkerPositions.blackCheckers, coordinates);
+
       //Remove the value from that index
       this.checkerPositions.blackCheckers.splice(indexOfChecker, 1);
+
+      // Set that grid spot to null
+      this.grid[row][column] = null;
+      return true;
+
     } else if (this.blackOrWhite(coordinates) === false){
       // If the piece is in the white category
       //  Get the index that the piece is in
-      let indexOfChecker = this.checkerPositions.whiteCheckers.indexOf(coordinates);
-      console.log(indexOfChecker);
+      let indexOfChecker = getIndexOfPos(this.checkerPositions.whiteCheckers, coordinates);
+
       //Remove the value from that index
       this.checkerPositions.whiteCheckers.splice(indexOfChecker, 1);
+
+      // Set that grid spot to null
+      this.grid[row][column] = null;
+      return true;
+
     } else if (this.blackOrWhite(coordinates) === null){
-      console.log(coordinates);
+      return false;
     }
   }
 
@@ -192,14 +213,61 @@ class Game {
     this.board.placeCheckers();
     console.log(this.board.checkerPositions);
   }
+  validInput(start, end){
+    // Convert inputs to ints
+    let startNum = Number(start);
+    let endNum = Number(end);
+
+    // Check to see if inputs convert to integers.
+    if (isNaN(startNum) || isNaN(endNum)){
+      // If not integers
+      console.log('Please make sure that you input numbers.');
+      return false;
+    } else {
+      // if they are ints check to see that they are less than or equal to 7
+      if (startNum <= 77 && endNum <= 77){
+        return true
+      } else {
+        console.log('Please enter a number less than 77.')
+      }
+    }
+  }
+  validRow(startCoordinates, endCoordinates){
+    if (this.board.blackOrWhite(startCoordinates) === true) {
+      //If it's a black piece, the row must decrease
+      if (startCoordinates[0] > endCoordinates[0]){
+        return true;
+      }else {
+        return false;
+      }
+    }else if (this.board.blackOrWhite(startCoordinates) === false){
+      //If it's a white piece, the row must increase
+      if (startCoordinates[0] < endCoordinates[0]){
+        return true;
+      }else {
+        return false;
+      }
+    } else {
+      console.log('Something went wrong...');
+    }
+  }
+  validMove(){
+
+  }
+
   moveChecker(start, end){
-    console.log(this.board.checkerPositions);
-    // These let us choose the coordinates row = array[0], column = array[1];
-    let startCoordinates = start.split('');
-    let endCoordinates = end.split('');
+    // console.log(this.board.checkerPositions);
+
+    // Turn the start and end into small arrays. These let us choose the coordinates row = array[0], column = array[1];
+    let startNum = start.split('');
+    let endNum = end.split('');
+      // Turn the values in each array into integers.
+    let startCoordinates = startNum.map(val => parseInt(val, 10));
+    let endCoordinates = endNum.map(val => parseInt(val, 10));
 
     // Identify the checker object
     let checker = this.board.selectChecker(startCoordinates[0], startCoordinates[1]);
+    console.log(this.validRow(startCoordinates, endCoordinates));
     //Place the checker down on the board
     this.board.placeChecker(endCoordinates[0], endCoordinates[1], checker);
     //Clear the spot on the board
