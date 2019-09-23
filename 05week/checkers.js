@@ -196,32 +196,36 @@ class Board {
 
   }
   jumpChecker(startCoo, endCoo, checker){
-    // Kill the checker in the end position
-    this.clearSpot(endCoo[0], endCoo[1]);
     // If the starting piece is black
     if (this.blackOrWhite(startCoo)){
+      // Define some potential coordinates
+      let rightPotential = [endCoo[0] - 1, endCoo[1] + 1];
+      let leftPotential = [endCoo[0] - 1, endCoo[1] - 1];
       // If the endCoo column was +1 of the startCoo column
       if (endCoo[1] === (startCoo[1] + 1)){
-        // Jump the checker one row up and one column to the right
-        this.placeChecker((endCoo[0] + 1), (endCoo[1] + 1), checker);
+        // Jump the checker one row up and one column to the right (right potential)
+        this.placeChecker(rightPotential[0], rightPotential[1], checker);
       }
       // If the endCoo column was -1 of the startCoo column
       else if (endCoo[1] === (startCoo[1] - 1)){
-        // Jump the checker one row up and one column to the left
-        this.placeChecker((endCoo[0] + 1), (endCoo[1] - 1), checker);
+        // Jump the checker one row up and one column to the left (left potential)
+        this.placeChecker(leftPotential[0], leftPotential[1], checker);
       }
     }
     // If the starting piece is white
     else if (!this.blackOrWhite(startCoo)){
+      // Define some potential coordinates
+      let rightPotential = [endCoo[0] + 1, endCoo[1] + 1];
+      let leftPotential = [endCoo[0] + 1, endCoo[1] - 1];
       // If the endCoo column was +1 of the startCoo column
       if (endCoo[1] === (startCoo[1] + 1)){
-        // Jump the piece one row down and one column to the right
-        this.placeChecker((endCoo[0] - 1), (endCoo[1] + 1), checker);
+        // Jump the piece one row down and one column to the right (right potentia)
+        this.placeChecker(rightPotential[0], rightPotential[1], checker);
       }
       // If the endCoo column was -1 of the startCoo column
       else if (endCoo[1] === (startCoo[1] - 1)){
-        // Jump the piece one row down and one column to the left
-        this.placeChecker((endCoo[0] - 1), (endCoo[1] - 1), checker);
+        // Jump the piece one row down and one column to the left (left potential)
+        this.placeChecker(leftPotential[0], leftPotential[1], checker);
       }
     }
   }
@@ -230,11 +234,12 @@ class Board {
 class Game {
   constructor() {
     this.board = new Board;
+    this.whitePoints = 0;
+    this.blackPoints = 0;
   }
   start() {
     this.board.createGrid();
     this.board.placeCheckers();
-    console.log(this.board.checkerPositions);
   }
   validInput(start, end){
     // Check to see if inputs convert to integers.
@@ -294,12 +299,13 @@ class Game {
       return false;
     }
   }
-  validPos(endCoo){
+  validPos(startCoo, endCoo){
     // Check to see that the endCoordinates doesn't have a piece
     // If it's player black's turn & the endCoo piece is black (aka true) 
     //    or if it's player white's turn & the enCoo piece is white (aka false), then the move is not valid.
-    if (playerTurn === 'black' && this.board.blackOrWhite(endCoo) ||
-        (playerTurn === 'white' && !this.board.blackOrWhite(endCoo))){
+
+    if (((this.board.blackOrWhite(startCoo) === true) && (this.board.blackOrWhite(endCoo) === true)) ||
+        (((this.board.blackOrWhite(startCoo) === false) && (this.board.blackOrWhite(endCoo) === false)))){
       console.log(`You already have a checker piece there!`);
       return false;
     }else {
@@ -310,44 +316,87 @@ class Game {
     // Make sure that it's moving to a valid row, a valid column, & that it's an open position.
     if (this.validRow(startCoo, endCoo) && 
         this.validCol(startCoo, endCoo) && 
-        this.validPos(endCoo)){
+        this.validPos(startCoo, endCoo)){
       return true;
     }else {
       return false;
     }
   }
   validJump(startCoo, endCoo){
-    // If there is something other than null in that position
+    // If there is something other than null in the endCoo position (aka if there is the oponent's piece)
     if (this.board.blackOrWhite(endCoo) !== null){
-      // & if there's somewhere to jump to
-      if ()
+      // If the starting piece is black
+      if (this.board.blackOrWhite(startCoo)){
+        // Define some potential coordinates
+        let rightPotential = [endCoo[0] - 1, endCoo[1] + 1];
+        let leftPotential = [endCoo[0] - 1, endCoo[1] - 1];
+        // & if there's somewhere to jump to (If right or left potential are not found in checker positions)
+        if (!searchForArray(this.board.checkerPositions.blackCheckers, rightPotential) || 
+            !searchForArray(this.board.checkerPositions.blackCheckers, leftPotential)){
+          this.blackPoints = this.blackPoints + 1;
+          console.log(`Black has captured ${this.blackPoints} white checker(s)`);
+          return true
+        } else {
+          return false;
+        }
+      }
+      // If the starting piece is white
+      else if (!this.board.blackOrWhite(startCoo)){
+        // Define some potential coordinates
+        let rightPotential = [endCoo[0] + 1, endCoo[1] + 1];
+        let leftPotential = [endCoo[0] + 1, endCoo[1] - 1];
+        // & if there's somewhere to jump to (If right or left potential are not found in checker positions)
+        if (!searchForArray(this.board.checkerPositions.whiteCheckers, rightPotential) || 
+            !searchForArray(this.board.checkerPositions.whiteCheckers, leftPotential)){
+          this.whitePoints = this.whitePoints + 1;
+          console.log(`White has captured ${this.whitePoints} black checker(s)`);
+          return true
+        } else {
+          return false;
+        }
+      }
     } else {
       return false;
     }
   }
 
   moveChecker(start, end){
-    // Make sure input is valid
-    if (this.validInput(start, end)){
-      // Turn the start and end into small arrays. These let us choose the coordinates row = array[0], column = array[1];
-      let startNum = start.split('');
-      let endNum = end.split('');
-      // Turn the values in each array into integers.
-      let startCoordinates = startNum.map(val => parseInt(val, 10));
-      let endCoordinates = endNum.map(val => parseInt(val, 10));
-      // Identify the checker object
-      let checker = this.board.selectChecker(startCoordinates[0], startCoordinates[1]);
-      console.log(`Is move valid?: ${this.validMove(startCoordinates, endCoordinates)}`);
-      // Check to see that the move is valid
-      if (this.validMove(startCoordinates, endCoordinates)){
-        // If there is an oponent's piece, kill it & jump!
-        //  Place the checker down on the board
-        this.board.placeChecker(endCoordinates[0], endCoordinates[1], checker);
-        //  Clear the spot on the board
-        this.board.clearSpot(startCoordinates[0], startCoordinates[1]);
-        //  Switch player turn
-        playerTurn = 'white';
+    // If nobody has won play the game
+    if (this.blackPoints < 7 || this.whitePoints < 7){
+      // Make sure input is valid
+      if (this.validInput(start, end)){
+        // Turn the start and end into small arrays. These let us choose the coordinates row = array[0], column = array[1];
+        let startNum = start.split('');
+        let endNum = end.split('');
+        // Turn the values in each array into integers.
+        let startCoordinates = startNum.map(val => parseInt(val, 10));
+        let endCoordinates = endNum.map(val => parseInt(val, 10));
+        // Identify the checker object (select checker)
+        let checker = this.board.selectChecker(startCoordinates[0], startCoordinates[1]);
+        // Check to see that the move is valid
+        if (this.validMove(startCoordinates, endCoordinates)){
+          // If there is an oponent's piece, kill it & jump!
+          if (this.validJump(startCoordinates, endCoordinates)){
+            // Jump the checker & capture
+            this.board.jumpChecker(startCoordinates, endCoordinates, checker);
+            this.board.clearSpot(startCoordinates[0], startCoordinates[1]);
+            this.board.clearSpot(endCoordinates[0], endCoordinates[1]);
+          } else{
+            //  Place the checker down on the board
+            this.board.placeChecker(endCoordinates[0], endCoordinates[1], checker);
+            //  Clear the spot on the board
+            this.board.clearSpot(startCoordinates[0], startCoordinates[1]);
+            //  Switch player turn
+            if (playerTurn === 'black'){
+              playerTurn = 'white';
+            } else if (playerTurn === 'white'){
+              playerTurn = 'black';
+            }
+          }
+        }
       }
+    } else {
+      console.log(`${playerTurn} is the winner!`);
     }
   }
 }
@@ -368,6 +417,11 @@ game.start();
 
 
 // Tests
+
+// This game is playable; however, it was designed differently than the tests were intended to test for.
+//  For example, the jump & capture is automated so to capture a piece the player moves their checker to the piece they want to capture and the game automatically captures and jumps their piece.
+//  Another difference is that the black and white cheker pieces are stored in an object so there is syntatical difference to call them.
+//    Some of the tests were altered to match the gameplay.
 if (typeof describe === 'function') {
   describe('Game', () => {
     it('should have a board', () => {
@@ -389,10 +443,10 @@ if (typeof describe === 'function') {
       assert(game.board.grid[4][3]);
     });
     it('should be able to jump over and kill another checker', () => {
-      game.moveChecker('30', '52');
+      game.moveChecker('30', '41');
       assert(game.board.grid[5][2]);
       assert(!game.board.grid[4][1]);
-      assert.equal(game.board.checkers.length, 23);
+      assert.equal(Number(game.board.checkerPositions.blackCheckers.length) + Number(game.board.checkerPositions.whiteCheckers.length), 23);
     });
   });
 } else {
