@@ -8,9 +8,10 @@ const rl = readline.createInterface({
 });
 
 // Checker piece symbols for easy access
-let blackCheckerSymbol = '⚫';
-let whiteCheckerSymbol = '⚪';
-let kingCheckerSymbol = '👑';
+let blackCheckerSymbol = '◉';
+let whiteCheckerSymbol = '◎';
+let blackKingCheckerSymbol = '♚';
+let whiteKingCheckerSymbol = '♔';
 
 // player turn
 let playerTurn = 'black';
@@ -18,7 +19,28 @@ let playerTurn = 'black';
 class Checker {
   constructor(symbol){
     this.symbol = symbol;
+    this.isKing = false;
   }
+  // Label the piece a king
+  makeKing() {
+    // Make the piece king
+    this.isKing = true;
+
+    // If checker is black
+    if (this.symbol === blackCheckerSymbol){
+      this.symbol = blackKingCheckerSymbol;
+    } 
+    // If checker is white
+    else if (this.symbol === whiteCheckerSymbol){
+      this.symbol = whiteKingCheckerSymbol;
+    }
+  }
+
+  // Returns true if the piece is a king
+  isKingChecker() {
+    return this.isKing;
+  }
+
 }
 
 // Because two arrays are not equal even when they contain the same elements
@@ -54,10 +76,14 @@ class Board {
   constructor() {
     this.grid = [];
     this.checkerPositions = {
+      blackCheckers: [],
+      blackKingCheckers: [],
       whiteCheckers: [],
-      blackCheckers: []
+      whiteKingCheckers: []
     };
   }
+
+  // Populate the grid and the checker Positions
   placeCheckers(){
     // Place white checkers
     for (let row1 = 0; row1 < 3; row1++){
@@ -101,6 +127,8 @@ class Board {
       }
     }
   }
+
+  // Prints out the grid
   viewGrid() {
     // add our column numbers
     let string = "  0 1 2 3 4 5 6 7\n";
@@ -130,7 +158,7 @@ class Board {
     return this.grid[row][column];
   }
 
-// Returns true or false based on whether the piece is black or white.
+// Returns true or false based on whether the checker is black or white.
   blackOrWhite(coordinates){
     if (searchForArray(this.checkerPositions.whiteCheckers, coordinates)){
       //If it's in the white category
@@ -144,6 +172,7 @@ class Board {
     }
   }
 
+  // Clears the spot on the grid and in the checker positions object
   clearSpot(row, column){
     //Let's update our checkerPositions object
     // Create our coordinates 'data type'
@@ -177,17 +206,19 @@ class Board {
     }
   }
 
+  // Places down a checker by updating the grid and the 
   placeChecker(row, column, checker){
     // Create our coordinates 'data type'
     const coordinates = [Number(row), Number(column)];
       // If checker is black.
-    if (checker.symbol === blackCheckerSymbol){
+    if (checker.symbol === blackCheckerSymbol || checker.symbol === blackKingCheckerSymbol){
       // Set the grid position to a checker
       this.grid[row][column] = checker;
       // Update the checker positions object.
       this.checkerPositions.blackCheckers.push(coordinates);
-    } else if (checker.symbol === whiteCheckerSymbol){
-      // If checker is white.
+    } 
+    // If checker is white.
+    else if (checker.symbol === whiteCheckerSymbol || checker.symbol === whiteKingCheckerSymbol){
       // Set the grid position to a checker
       this.grid[row][column] = checker;
       // Update the checker positions object.
@@ -195,6 +226,8 @@ class Board {
     } 
 
   }
+
+  // Jumps a checker
   jumpChecker(startCoo, endCoo, checker){
     // If the starting piece is black
     if (this.blackOrWhite(startCoo)){
@@ -229,6 +262,28 @@ class Board {
       }
     }
   }
+
+  // Turns the checker into king
+  makeKing(coordinates){
+    // If checker is black
+    if (this.blackOrWhite(coordinates)){
+      // grab the checker object that we want to turn to king
+      let checker = this.selectChecker(coordinates[0], coordinates[1]);
+      // turn the checker into king
+      checker.makeKing();
+      // Push the checker coordinates to the checkerPositions object
+      this.checkerPositions.blackKingCheckers.push(coordinates);
+      // console.log(checker);
+      // console.log(this.grid)
+    }
+    // If checker is white
+    else if (this.blackOrWhite(coordinates) === false){
+      // turn the checker into king
+      checker.makeKing();
+      // Push the checker to the checkerPositions object
+      this.checkerPositions.whiteKingCheckers.push(coordinates);
+    }
+  }
 }
 
 class Game {
@@ -241,6 +296,27 @@ class Game {
     this.board.createGrid();
     this.board.placeCheckers();
   }
+
+  // Checks to see that the correct player is moving the checker
+  validPlayer(startCoo){
+    // Turn the player turn to a boolean
+    let truePlayer = null;
+    if (playerTurn === 'black'){
+      truePlayer = true;
+    }else {
+      truePlayer = false;
+    }
+
+    // If the piece being moved is the same as the player move return true
+    if (this.board.blackOrWhite(startCoo) === truePlayer){
+      return true;
+    }else{
+      console.log(`\n >>> Bruh... It's not your turn...`);
+      return false;
+    }
+  }
+
+  // Checks to see that input is valid
   validInput(start, end){
     // Check to see if inputs convert to integers.
     if (isNaN(start) || isNaN(end)){
@@ -268,26 +344,48 @@ class Game {
       }
     }
   }
-  validRow(startCoordinates, endCoordinates){
-    // If the start piece is black
-    if (this.board.blackOrWhite(startCoordinates)){
-      // Make sure that end row is decreasing -1.
-      if (endCoordinates[0] === startCoordinates[0] - 1){
+
+  // Makes sure that the ending position has a valid row
+  validRow(startCoordinates, endCoordinates, checker){
+    // If checker is king
+    if (checker.isKingChecker()){
+      // Regardless of color, retuen true if end row is one above or one below
+      if ((endCoordinates[0] === startCoordinates[0] - 1) ||
+            endCoordinates[0] === startCoordinates[0] + 1){
         return true;
-      }else {
+      } else {
         console.log(`Invalid Row. Row: ${endCoordinates[0]} is not a valid option.`);
         return false;
       }
     }
-    // If the start piece is white
-    else if (!this.board.blackOrWhite(startCoordinates)){
-      if (endCoordinates[0] === (startCoordinates[0] + 1)){
-        return true;
-      }else {
-        return false;
+    // If it's a regular checker
+    else {
+      // If the start piece is black
+      if (this.board.blackOrWhite(startCoordinates)){
+  
+        // Make sure that end row is decreasing -1.
+        if (endCoordinates[0] === startCoordinates[0] - 1){
+          return true;
+        }else {
+          console.log(`Invalid Row. Row: ${endCoordinates[0]} is not a valid option.`);
+          return false;
+        }
+      }
+      // If the start piece is white
+      else if (!this.board.blackOrWhite(startCoordinates)){
+
+        // Make sure that end row is increasing by one
+        if (endCoordinates[0] === (startCoordinates[0] + 1)){
+          return true;
+        }else {
+          console.log(`Invalid Row. Row: ${endCoordinates[0]} is not a valid option.`);
+          return false;
+        }
       }
     }
   }
+
+  // makes sure that the ending position has a valid column
   validCol(startCoordinates, endCoordinates){
     // regardless if it's white or black
     // Make sure that the end column is either one in front or one behing start column.
@@ -299,8 +397,9 @@ class Game {
       return false;
     }
   }
+
+  // Checks to see that the endCoordinates doesn't have its own checker piece already
   validPos(startCoo, endCoo){
-    // Check to see that the endCoordinates doesn't have a piece
     // If it's player black's turn & the endCoo piece is black (aka true) 
     //    or if it's player white's turn & the enCoo piece is white (aka false), then the move is not valid.
 
@@ -312,16 +411,21 @@ class Game {
       return true;
     }
   }
-  validMove(startCoo, endCoo) {
+
+  // Condenses previous conditions into one function
+  validMove(startCoo, endCoo, checker) {
     // Make sure that it's moving to a valid row, a valid column, & that it's an open position.
-    if (this.validRow(startCoo, endCoo) && 
+    if (this.validRow(startCoo, endCoo, checker) && 
         this.validCol(startCoo, endCoo) && 
-        this.validPos(startCoo, endCoo)){
+        this.validPos(startCoo, endCoo) &&
+        this.validPlayer(startCoo)){
       return true;
     }else {
       return false;
     }
   }
+
+  // Checks to see if a jump is possible
   validJump(startCoo, endCoo){
     // If there is something other than null in the endCoo position (aka if there is the oponent's piece)
     if (this.board.blackOrWhite(endCoo) !== null){
@@ -334,8 +438,8 @@ class Game {
         if (!searchForArray(this.board.checkerPositions.blackCheckers, rightPotential) || 
             !searchForArray(this.board.checkerPositions.blackCheckers, leftPotential)){
           this.blackPoints = this.blackPoints + 1;
-          console.log(`Black has captured ${this.blackPoints} white checker(s)`);
-          return true
+          console.log(`\n >>> Black has captured ${this.blackPoints} white checker(s)`);
+          return true;
         } else {
           return false;
         }
@@ -349,8 +453,8 @@ class Game {
         if (!searchForArray(this.board.checkerPositions.whiteCheckers, rightPotential) || 
             !searchForArray(this.board.checkerPositions.whiteCheckers, leftPotential)){
           this.whitePoints = this.whitePoints + 1;
-          console.log(`White has captured ${this.whitePoints} black checker(s)`);
-          return true
+          console.log(`\n >>> White has captured ${this.whitePoints} black checker(s)`);
+          return true;
         } else {
           return false;
         }
@@ -360,6 +464,27 @@ class Game {
     }
   }
 
+  // Check to see if there's a king
+  checkKing(startCoo, endCoo, checker) {
+    // If piece is not already king
+    if (checker.isKingChecker() === false){
+      // If the piece is black & it reaches the opposite end
+      if (this.board.blackOrWhite(startCoo) && endCoo[0] === 0){
+        return true;
+      }
+      // If the piece is white & it reaches the opposite end
+      else if (this.board.blackOrWhite(startCoo) === false && endCoo[0] === 7){
+        return false
+      }else {
+        return null;
+      }
+    } else {
+      return false;
+    }
+    
+  }
+
+  // Takes in coordinates and moves the checker piece
   moveChecker(start, end){
     // If nobody has won play the game
     if (this.blackPoints < 7 || this.whitePoints < 7){
@@ -374,17 +499,31 @@ class Game {
         // Identify the checker object (select checker)
         let checker = this.board.selectChecker(startCoordinates[0], startCoordinates[1]);
         // Check to see that the move is valid
-        if (this.validMove(startCoordinates, endCoordinates)){
-          // If there is an oponent's piece, kill it & jump!
+        if (this.validMove(startCoordinates, endCoordinates, checker)){
+          // If there is an oponent's piece
           if (this.validJump(startCoordinates, endCoordinates)){
             // Jump the checker & capture
             this.board.jumpChecker(startCoordinates, endCoordinates, checker);
             this.board.clearSpot(startCoordinates[0], startCoordinates[1]);
             this.board.clearSpot(endCoordinates[0], endCoordinates[1]);
-          } else{
+            // 
+            //  Switch player turn
+            if (playerTurn === 'black'){
+              playerTurn = 'white';
+            } else if (playerTurn === 'white'){
+              playerTurn = 'black';
+            }
+          } 
+          // If there is no piece to capture (default move)
+          else{
             //  Place the checker down on the board
             this.board.placeChecker(endCoordinates[0], endCoordinates[1], checker);
-            //  Clear the spot on the board
+            // If a king can be made, make it
+            if (this.checkKing(startCoordinates, endCoordinates, checker)){
+              console.log(`\n >>> ${playerTurn} made a King!`);
+              this.board.makeKing(endCoordinates);
+            }
+            //  Clear the start spot on the board
             this.board.clearSpot(startCoordinates[0], startCoordinates[1]);
             //  Switch player turn
             if (playerTurn === 'black'){
@@ -402,8 +541,8 @@ class Game {
 }
 
 function getPrompt() {
+  console.log(`\n >>>> It's ${playerTurn}'s turn <<<<`);
   game.board.viewGrid();
-  console.log(`It's ${playerTurn}'s turn:`);
   rl.question('which piece?: ', (whichPiece) => {
     rl.question('to where?: ', (toWhere) => {
       game.moveChecker(whichPiece, toWhere);
