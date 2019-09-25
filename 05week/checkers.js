@@ -77,9 +77,7 @@ class Board {
     this.grid = [];
     this.checkerPositions = {
       blackCheckers: [],
-      blackKingCheckers: [],
-      whiteCheckers: [],
-      whiteKingCheckers: []
+      whiteCheckers: []
     };
   }
 
@@ -271,17 +269,11 @@ class Board {
       let checker = this.selectChecker(coordinates[0], coordinates[1]);
       // turn the checker into king
       checker.makeKing();
-      // Push the checker coordinates to the checkerPositions object
-      this.checkerPositions.blackKingCheckers.push(coordinates);
-      // console.log(checker);
-      // console.log(this.grid)
     }
     // If checker is white
     else if (this.blackOrWhite(coordinates) === false){
       // turn the checker into king
       checker.makeKing();
-      // Push the checker to the checkerPositions object
-      this.checkerPositions.whiteKingCheckers.push(coordinates);
     }
   }
 }
